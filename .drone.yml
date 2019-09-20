@@ -1,0 +1,30 @@
+---
+kind: "pipeline"
+name: "container"
+steps:
+  - name: "container"
+    image: "jess/img:v0.5.7"
+    privileged: true
+    commands:
+      - |
+        echo "$DOCKER_REGISTRY_PASSWORD"  \
+          | img login --username="$DOCKER_REGISTRY_USERNAME" --password-stdin quay.io
+      - | 
+          img build \
+            --tag quay.io/littlemanco/pylint:latest \
+            --tag quay.io/littlemanco/pylint:${DRONE_COMMIT} \
+            .
+      - img push "quay.io/littlemanco/pylint:latest"
+      - img push "quay.io/littlemanco/pylint:${DRONE_COMMIT}"
+
+    environment:
+      DOCKER_REGISTRY_PASSWORD:
+        from_secret: "DOCKER_REGISTRY_PASSWORD"
+      DOCKER_REGISTRY_USERNAME:
+        from_secret: "DOCKER_REGISTRY_USERNAME"
+
+trigger:
+  branch:
+    - master
+  event:
+    - push
